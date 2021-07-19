@@ -5,8 +5,12 @@ const Axios = require('axios');
 const apiKey = process.env.API_KEY || '';
 
 const buildCache = async (cacheFileOutputPath) => {
-  const cards = {};
   const sets = [];
+  const cards = {};
+  let types = [];
+  let subtypes = [];
+  let supertypes = [];
+  let rarities = [];
 
   let page = 1;
   let result = await Axios.get('https://api.pokemontcg.io/v2/cards', {
@@ -20,6 +24,7 @@ const buildCache = async (cacheFileOutputPath) => {
   });
 
   while (result.data.data.length > 0) {
+    console.log(`Received card page ${page}`);
     page++;
     result.data.data.forEach((card) => {
       if (!cards[card.set.id]) {
@@ -66,16 +71,50 @@ const buildCache = async (cacheFileOutputPath) => {
     });
   }
 
+  result = await Axios.get('https://api.pokemontcg.io/v2/types', {
+      headers: {
+        'X-Api-Key': apiKey,
+      },
+    });
+
+  types = result.data.data;
+
+  result = await Axios.get('https://api.pokemontcg.io/v2/subtypes', {
+      headers: {
+        'X-Api-Key': apiKey,
+      },
+    });
+
+  subtypes = result.data.data;
+
+  result = await Axios.get('https://api.pokemontcg.io/v2/supertypes', {
+    headers: {
+      'X-Api-Key': apiKey,
+    },
+  });
+
+  supertypes = result.data.data;
+
+  result = await Axios.get('https://api.pokemontcg.io/v2/rarities', {
+    headers: {
+      'X-Api-Key': apiKey,
+    },
+  });
+
+  rarities = result.data.data;
+
   fs.writeFileSync(
     cacheFileOutputPath,
     JSON.stringify({
       cards,
       sets,
+      types,
+      subtypes,
+      supertypes,
+      rarities,
     }),
     'utf8',
   );
-
-  return sets;
 };
 
 buildCache(path.join(__dirname, 'src/cache.json'));
